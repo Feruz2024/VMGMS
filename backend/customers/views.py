@@ -1,0 +1,27 @@
+from django.shortcuts import render
+from rest_framework import viewsets, filters, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Customer
+from .serializers import CustomerSerializer
+from core.permissions import IsAdmin, IsServiceAdvisor
+
+class CustomerViewSet(viewsets.ModelViewSet):
+    queryset = Customer.objects.filter(is_active=True)
+    serializer_class = CustomerSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'primary_phone', 'email']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin() or IsServiceAdvisor()]
+        return [IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_active = False
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+# Create your views here.
