@@ -5,7 +5,7 @@ from django.db import transaction
 from .models import Invoice, Payment
 from .serializers import InvoiceSerializer, PaymentSerializer
 from workorders.models import WorkOrder, WorkOrderItem
-from core.permissions import IsAdminOrServiceAdvisor
+from rest_framework.permissions import AllowAny
 from decimal import Decimal
 from django.shortcuts import get_object_or_404
 
@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrServiceAdvisor]
+    permission_classes = [AllowAny]
 
     @action(detail=False, methods=['post'], url_path='generate', url_name='generate')
     @transaction.atomic
@@ -44,7 +44,7 @@ class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrServiceAdvisor]
+    permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         invoice_id = request.data.get('invoice')

@@ -9,46 +9,20 @@ import WorkOrderForm from './WorkOrderForm';
 import CustomersPage from './CustomersPage';
 import VehiclesPage from './VehiclesPage';
 
-const isLoggedIn = !!localStorage.getItem('access');
+
+// TEMP: Always allow access for development (bypass login)
+const isLoggedIn = true;
 
 function App() {
   return (
     <Router>
       <Routes>
-        {!isLoggedIn ? (
-          <>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </>
-        ) : (
-          <>
-            <Route path="/dashboard" element={
-              <>
-                <NavBar />
-                <DashboardPage />
-              </>
-            } />
-            <Route path="/workorders" element={
-              <>
-                <NavBar />
-                <WorkOrderForm />
-              </>
-            } />
-            <Route path="/customers" element={
-              <>
-                <NavBar />
-                <CustomersPage />
-              </>
-            } />
-            <Route path="/vehicles" element={
-              <>
-                <NavBar />
-                <VehiclesPage />
-              </>
-            } />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </>
-        )}
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/dashboard" element={<><NavBar /><DashboardPage /></>} />
+        <Route path="/workorders" element={<><NavBar /><WorkOrderForm /></>} />
+        <Route path="/customers" element={<><NavBar /><CustomersPage /></>} />
+        <Route path="/vehicles" element={<><NavBar /><VehiclesPage /></>} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
   );

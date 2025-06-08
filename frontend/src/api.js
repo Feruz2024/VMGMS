@@ -1,4 +1,14 @@
 import axios from 'axios';
+// Service API
+export const fetchServices = async () => {
+  const { data } = await api.get(`/services/`);
+  return data;
+};
+
+export const createService = async (service) => {
+  const { data } = await api.post(`/services/`, service);
+  return data;
+};
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -79,6 +89,21 @@ export const fetchWorkOrders = async () => {
 export const createWorkOrder = async (workorder) => {
   const { data } = await api.post(`/workorders/`, workorder);
   return data;
+};
+
+// Fix endpoint to match backend: workorder-items
+export const createWorkOrderItem = async (item) => {
+  const { data } = await api.post(`/workorder-items/`, item);
+  return data;
+};
+
+export const updateWorkOrder = async (id, data) => {
+  const { data: updated } = await api.patch(`/workorders/${id}/`, data);
+  return updated;
+};
+
+export const deleteWorkOrder = async (id) => {
+  await api.delete(`/workorders/${id}/`);
 };
 
 // You can add more API functions here as needed

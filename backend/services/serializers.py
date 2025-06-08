@@ -5,7 +5,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = [
-            'id', 'name', 'description', 'default_hours', 'default_rate', 'created_at', 'updated_at'
+            'id', 'name', 'category', 'description', 'default_hours', 'default_rate', 'created_at', 'updated_at'
         ]
 
     def validate_name(self, value):
