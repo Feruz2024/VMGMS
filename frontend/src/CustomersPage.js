@@ -5,7 +5,7 @@ import { fetchCustomers, createCustomer } from './api';
 export default function CustomersPage() {
   const [form, setForm] = useState({
     name: "",
-    telephone: "",
+    primary_phone: "",
     email: "",
     telegram: "",
     whatsapp: "",
@@ -27,15 +27,15 @@ export default function CustomersPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.name || !form.telephone) {
-      setError("Customer name and telephone are required.");
+    if (!form.name || !form.primary_phone) {
+      setError("Customer name and phone are required.");
       return;
     }
     try {
       const newCustomer = await createCustomer(form);
       setCustomers([newCustomer, ...customers]);
       setSuccess("Customer created successfully!");
-      setForm({ name: "", telephone: "", email: "", telegram: "", whatsapp: "", address: "", notes: "" });
+      setForm({ name: "", primary_phone: "", email: "", telegram: "", whatsapp: "", address: "", notes: "" });
     } catch (err) {
       setError("Failed to create customer.");
     }
@@ -51,7 +51,7 @@ export default function CustomersPage() {
               <TextField label="Customer Name" name="name" value={form.name} onChange={handleChange} fullWidth required />
             </Grid>
             <Grid item xs={12}>
-              <TextField label="Telephone" name="telephone" value={form.telephone} onChange={handleChange} fullWidth required />
+              <TextField label="Phone" name="primary_phone" value={form.primary_phone} onChange={handleChange} fullWidth required />
             </Grid>
             <Grid item xs={12}>
               <TextField label="Email" name="email" value={form.email} onChange={handleChange} fullWidth />
@@ -83,7 +83,7 @@ export default function CustomersPage() {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Telephone</TableCell>
+                <TableCell>Phone</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Telegram</TableCell>
                 <TableCell>WhatsApp</TableCell>
@@ -95,7 +95,7 @@ export default function CustomersPage() {
               {customers.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>{c.name}</TableCell>
-                  <TableCell>{c.telephone}</TableCell>
+                  <TableCell>{c.primary_phone}</TableCell>
                   <TableCell>{c.email}</TableCell>
                   <TableCell>{c.telegram}</TableCell>
                   <TableCell>{c.whatsapp}</TableCell>

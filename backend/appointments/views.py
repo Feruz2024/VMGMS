@@ -14,11 +14,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     search_fields = ['reason', 'status']
     ordering_fields = ['appointment_time', 'status']
 
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAdmin() or IsServiceAdvisor()]
-        return [AllowAny()]
-
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.status = 'Cancelled'

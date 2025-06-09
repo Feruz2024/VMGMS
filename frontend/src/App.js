@@ -8,6 +8,8 @@ import DashboardPage from './DashboardPage';
 import WorkOrderForm from './WorkOrderForm';
 import CustomersPage from './CustomersPage';
 import VehiclesPage from './VehiclesPage';
+import AppointmentsPage from './AppointmentsPage';
+import PartsInventoryPage from './PartsInventoryPage';
 
 
 // TEMP: Always allow access for development (bypass login)
@@ -22,6 +24,8 @@ function App() {
         <Route path="/workorders" element={<><NavBar /><WorkOrderForm /></>} />
         <Route path="/customers" element={<><NavBar /><CustomersPage /></>} />
         <Route path="/vehicles" element={<><NavBar /><VehiclesPage /></>} />
+        <Route path="/appointments" element={<><NavBar /><AppointmentsPage /></>} />
+        <Route path="/inventory" element={<><NavBar /><PartsInventoryPage /></>} />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>

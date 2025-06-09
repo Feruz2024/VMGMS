@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Box, Paper, Typography, TextField, Button, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Alert } from "@mui/material";
-import { fetchVehicles, createVehicle } from './api';
+import { Box, Paper, Typography, TextField, Button, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Alert, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { fetchVehicles, createVehicle, fetchCustomers } from './api';
 
 export default function VehiclesPage() {
   const [form, setForm] = useState({
-    brand: "",
+    make: "",
     model: "",
     year: "",
     vin: "",
-    license: "",
+    license_plate: "",
     color: "",
     engine: "",
-    notes: ""
+    notes: "",
+    customer: ""
   });
   const [vehicles, setVehicles] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
     fetchVehicles().then(setVehicles);
+    fetchCustomers().then(setCustomers);
   }, []);
 
   const handleChange = (e) => {
@@ -28,15 +31,15 @@ export default function VehiclesPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.brand || !form.model || !form.year || !form.vin || !form.license) {
-      setError("Brand, Model, Year, VIN, and License Plate are required.");
+    if (!form.make || !form.model || !form.year || !form.vin || !form.license_plate || !form.customer) {
+      setError("Make, Model, Year, VIN, License Plate, and Customer are required.");
       return;
     }
     try {
       const newVehicle = await createVehicle(form);
       setVehicles([newVehicle, ...vehicles]);
       setSuccess("Vehicle created successfully!");
-      setForm({ brand: "", model: "", year: "", vin: "", license: "", color: "", engine: "", notes: "" });
+      setForm({ make: "", model: "", year: "", vin: "", license_plate: "", color: "", engine: "", notes: "", customer: "" });
     } catch (err) {
       setError("Failed to create vehicle.");
     }
@@ -49,7 +52,22 @@ export default function VehiclesPage() {
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <TextField label="Brand" name="brand" value={form.brand} onChange={handleChange} fullWidth required />
+              <FormControl fullWidth required sx={{ mb: 2 }}>
+                <InputLabel>Customer</InputLabel>
+                <Select
+                  name="customer"
+                  value={form.customer}
+                  label="Customer"
+                  onChange={handleChange}
+                >
+                  {customers.map(c => (
+                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Make" name="make" value={form.make} onChange={handleChange} fullWidth required />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField label="Model" name="model" value={form.model} onChange={handleChange} fullWidth required />
@@ -61,7 +79,7 @@ export default function VehiclesPage() {
               <TextField label="VIN" name="vin" value={form.vin} onChange={handleChange} fullWidth required />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField label="License Plate" name="license" value={form.license} onChange={handleChange} fullWidth required />
+              <TextField label="License Plate" name="license_plate" value={form.license_plate} onChange={handleChange} fullWidth required />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField label="Color" name="color" value={form.color} onChange={handleChange} fullWidth />
@@ -86,7 +104,8 @@ export default function VehiclesPage() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Brand</TableCell>
+                <TableCell>Customer</TableCell>
+                <TableCell>Make</TableCell>
                 <TableCell>Model</TableCell>
                 <TableCell>Year</TableCell>
                 <TableCell>VIN</TableCell>
@@ -99,11 +118,12 @@ export default function VehiclesPage() {
             <TableBody>
               {vehicles.map((v) => (
                 <TableRow key={v.id}>
-                  <TableCell>{v.brand}</TableCell>
+                  <TableCell>{(customers.find(c => c.id === v.customer) || {}).name || v.customer}</TableCell>
+                  <TableCell>{v.make}</TableCell>
                   <TableCell>{v.model}</TableCell>
                   <TableCell>{v.year}</TableCell>
                   <TableCell>{v.vin}</TableCell>
-                  <TableCell>{v.license}</TableCell>
+                  <TableCell>{v.license_plate}</TableCell>
                   <TableCell>{v.color}</TableCell>
                   <TableCell>{v.engine}</TableCell>
                   <TableCell>{v.notes}</TableCell>

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   Box, Button, TextField, Typography, Paper, MenuItem, Select, InputLabel, FormControl, Grid, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox
 } from "@mui/material";
-import { fetchCustomers, fetchVehicles, fetchWorkOrders, createWorkOrder, createCustomer, createVehicle, fetchServices, createService, createWorkOrderItem, updateWorkOrder, deleteWorkOrder } from './api';
+import { fetchCustomers, fetchVehicles, fetchWorkOrders, createWorkOrder, createCustomer, createVehicle, fetchServices, createService, createWorkOrderItem, updateWorkOrder, deleteWorkOrder, fetchAppointments, fetchParts, createWorkOrderPartItem } from './api';
+import PartSelect from './PartSelect';
 
 const techniciansList = [
   { id: 1, name: "Tech Mike" },
@@ -13,8 +14,47 @@ const statusOptions = [
 ];
 
 export default function WorkOrderForm() {
+  // PARTS STATE AND HANDLERS (must be before any use)
+  const [partItems, setPartItems] = useState([]); // { partId, quantity, price, description }
+  const [showAddPart, setShowAddPart] = useState(false);
+  const [selectedPartId, setSelectedPartId] = useState("");
+  const [partQty, setPartQty] = useState(1);
+  const [partError, setPartError] = useState("");
+  const [allParts, setAllParts] = useState([]);
+  useEffect(() => { fetchParts().then(setAllParts); }, []);
+  const handleAddPartItem = () => {
+    setPartError("");
+    if (!selectedPartId || !partQty || partQty <= 0) {
+      setPartError("Select a part and enter a valid quantity.");
+      return;
+    }
+    if (partItems.some(p => p.partId === selectedPartId)) {
+      setPartError("Part already added.");
+      return;
+    }
+    const part = allParts.find(p => p.id === selectedPartId);
+    if (!part) {
+      setPartError("Part not found.");
+      return;
+    }
+    setPartItems([...partItems, {
+      partId: selectedPartId,
+      quantity: partQty,
+      price: part.selling_price,
+      description: part.description,
+      part_number: part.part_number
+    }]);
+    setSelectedPartId("");
+    setPartQty(1);
+    setShowAddPart(false);
+  };
+  const handleRemovePartItem = (id) => {
+    setPartItems(partItems.filter(p => p.partId !== id));
+  };
+
   const [customerId, setCustomerId] = useState("");
   const [vehicleId, setVehicleId] = useState("");
+  const [appointmentId, setAppointmentId] = useState("");
   const [form, setForm] = useState({
     services: [],
     createdDate: new Date().toISOString().slice(0, 10),
@@ -31,6 +71,7 @@ export default function WorkOrderForm() {
   const [customers, setCustomers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [workorders, setWorkorders] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
@@ -81,6 +122,8 @@ export default function WorkOrderForm() {
     fetchVehicles().then(setVehicles);
     fetchWorkOrders().then(setWorkorders);
     fetchServices().then(setAllServices);
+    fetchAppointments().then(setAppointments);
+    fetchParts().then(setAllParts);
   }, []);
 
   // Filter vehicles by selected customer
@@ -93,6 +136,23 @@ export default function WorkOrderForm() {
   // Add state for service dialog
   const [showServiceDialogView, setShowServiceDialogView] = useState(false);
   const [serviceListView, setServiceListView] = useState([]);
+
+  // When appointmentId changes, pre-fill customer, vehicle, and services
+  useEffect(() => {
+    if (!appointmentId) return;
+    const appt = appointments.find(a => a.id === Number(appointmentId));
+    if (appt) {
+      setCustomerId(appt.customer);
+      setVehicleId(appt.vehicle);
+      setForm(f => ({
+        ...f,
+        services: appt.services || [],
+        technician: appt.technician || "",
+        deadlineDate: appt.appointment_time ? appt.appointment_time.slice(0, 10) : f.deadlineDate
+      }));
+      setComplaints([appt.reason || ""]);
+    }
+  }, [appointmentId, appointments]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -109,7 +169,8 @@ export default function WorkOrderForm() {
         deadline: form.deadlineDate,
         technician: form.technician,
         status: form.status,
-        customer_complaint: complaints.filter(c => c.trim()).join("\n")
+        customer_complaint: complaints.filter(c => c.trim()).join("\n"),
+        appointment: appointmentId || null
       });
       // Create WorkOrderItems for each selected service
       for (const sid of form.services) {
@@ -125,12 +186,26 @@ export default function WorkOrderForm() {
           });
         }
       }
-      setWorkorders([newWO, ...workorders]);
+      // Create WorkOrderItems for each part
+      for (const part of partItems) {
+        await createWorkOrderPartItem({
+          work_order: newWO.id,
+          item_type: 'PART',
+          description: part.description || part.part_number,
+          quantity: part.quantity,
+          unit_price: part.price,
+          catalog_part: part.partId
+        });
+      }
+      // Fetch the updated work order with items
+      const updatedWO = (await fetchWorkOrders()).find(w => w.id === newWO.id);
+      setWorkorders([updatedWO, ...workorders]);
       setSuccess("Work order created successfully!");
       setForm({ services: [], createdDate: new Date().toISOString().slice(0, 10), deadlineDate: "", technician: "", status: "New", complaint: "" });
       setCustomerId("");
       setVehicleId("");
       setComplaints([""]);
+      setPartItems([]);
     } catch (err) {
       setError("Failed to create work order.");
     }
@@ -419,6 +494,27 @@ export default function WorkOrderForm() {
           <Grid container direction="column" spacing={2} sx={{ width: '100%', margin: 0, alignItems: 'center', justifyContent: 'center' }}>
             {/* Row 1 */}
             <Grid container item direction="row" wrap="wrap" spacing={2} xs={12} justifyContent="center" alignItems="center">
+              {/* Appointment selection row */}
+              <Grid container item direction="row" wrap="wrap" spacing={2} xs={12} justifyContent="center" alignItems="center">
+                <Grid item xs={12} md={3} lg={2.5}>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>Appointment</InputLabel>
+                    <Select
+                      value={appointmentId}
+                      label="Appointment"
+                      onChange={e => setAppointmentId(e.target.value)}
+                      sx={{ minWidth: 220, maxWidth: 400 }}
+                    >
+                      <MenuItem value="">None</MenuItem>
+                      {appointments.map(a => (
+                        <MenuItem key={a.id} value={a.id}>
+                          {`#${a.id} - ${a.customer_name || ''} (${a.appointment_time ? a.appointment_time.slice(0, 16).replace('T', ' ') : ''})`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
               <Grid item xs={12} md={3} lg={2.5}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Customer</InputLabel>
@@ -503,9 +599,48 @@ export default function WorkOrderForm() {
                 <Button variant="outlined" fullWidth sx={{ mt: 2 }} onClick={() => setShowServiceDialog(true)}>
                   {form.services.length > 0 ? `Selected Services (${form.services.length})` : 'Select Services'}
                 </Button>
-                <Box sx={{ mt: 1 }}>
-                  {/* Hide selected services from the form, only show in popup */}
-                </Box>
+                <Box sx={{ mt: 1 }} />
+                {/* Parts Section */}
+                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Parts</Typography>
+                <Button variant="outlined" size="small" sx={{ mb: 1 }} onClick={() => setShowAddPart(true)}>+ Add Part</Button>
+                {partItems.length === 0 && <Typography variant="body2" color="text.secondary">No parts added.</Typography>}
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Part Number</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell>Qty</TableCell>
+                        <TableCell>Unit Price</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {partItems.map((p) => (
+                        <TableRow key={p.partId}>
+                          <TableCell>{p.part_number}</TableCell>
+                          <TableCell>{p.description}</TableCell>
+                          <TableCell>{p.quantity}</TableCell>
+                          <TableCell>{p.price}</TableCell>
+                          <TableCell><Button color="error" size="small" onClick={() => handleRemovePartItem(p.partId)}>Remove</Button></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                {partError && <Alert severity="error" sx={{ mt: 1 }}>{partError}</Alert>}
+                {/* Add Part Dialog */}
+                <Dialog open={showAddPart} onClose={() => setShowAddPart(false)} maxWidth="xs" fullWidth>
+                  <DialogTitle>Select Part</DialogTitle>
+                  <DialogContent>
+                    <PartSelect value={selectedPartId} onChange={setSelectedPartId} />
+                    <TextField label="Quantity" type="number" value={partQty} onChange={e => setPartQty(Number(e.target.value))} fullWidth sx={{ mt: 2 }} />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => setShowAddPart(false)} color="secondary">Cancel</Button>
+                    <Button onClick={handleAddPartItem} variant="contained">Add</Button>
+                  </DialogActions>
+                </Dialog>
               </Grid>
               <Grid item xs={12} md={3} lg={3}>
                 <TextField label="Deadline Date" type="date" fullWidth margin="normal" value={form.deadlineDate} onChange={e => setForm(f => ({ ...f, deadlineDate: e.target.value }))} InputLabelProps={{ shrink: true }} />

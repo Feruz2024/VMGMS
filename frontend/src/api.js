@@ -97,6 +97,13 @@ export const createWorkOrderItem = async (item) => {
   return data;
 };
 
+// Add work order item with part
+export const createWorkOrderPartItem = async (item) => {
+  // item: { work_order, item_type: 'PART', description, quantity, unit_price, catalog_part }
+  const { data } = await api.post(`/workorder-items/`, item);
+  return data;
+};
+
 export const updateWorkOrder = async (id, data) => {
   const { data: updated } = await api.patch(`/workorders/${id}/`, data);
   return updated;
@@ -104,6 +111,64 @@ export const updateWorkOrder = async (id, data) => {
 
 export const deleteWorkOrder = async (id) => {
   await api.delete(`/workorders/${id}/`);
+};
+
+export const fetchAppointments = async (params = {}) => {
+  const { data } = await api.get('/appointments/', { params });
+  return data;
+};
+
+export const createAppointment = async (appointment) => {
+  // Convert services to array of IDs if not already
+  const payload = {
+    ...appointment,
+    services: Array.isArray(appointment.services)
+      ? appointment.services
+      : (appointment.services ? [appointment.services] : [])
+  };
+  const response = await api.post('/appointments/', payload);
+  return response.data;
+};
+
+export const updateAppointment = async (id, appointment) => {
+  // Convert services to array of IDs if not already
+  const payload = {
+    ...appointment,
+    services: Array.isArray(appointment.services)
+      ? appointment.services
+      : (appointment.services ? [appointment.services] : [])
+  };
+  const response = await api.patch(`/appointments/${id}/`, payload);
+  return response.data;
+};
+
+export const deleteAppointment = async (id) => {
+  await api.delete(`/appointments/${id}/`);
+};
+
+// PARTS INVENTORY API
+export const fetchParts = async () => {
+  const { data } = await api.get('/parts/');
+  return data;
+};
+
+export const createPart = async (part) => {
+  const { data } = await api.post('/parts/', part);
+  return data;
+};
+
+export const updatePart = async (id, part) => {
+  const { data } = await api.patch(`/parts/${id}/`, part);
+  return data;
+};
+
+export const adjustPartStock = async (id, payload) => {
+  const { data } = await api.post(`/parts/${id}/adjust_stock/`, payload);
+  return data;
+};
+
+export const deactivatePart = async (id) => {
+  await api.patch(`/parts/${id}/`, { is_active: false });
 };
 
 // You can add more API functions here as needed

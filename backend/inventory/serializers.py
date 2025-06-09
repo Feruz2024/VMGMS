@@ -5,7 +5,7 @@ class PartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Part
         fields = [
-            'id', 'part_number', 'description', 'selling_price', 'cost_price', 'quantity_on_hand', 'created_at', 'updated_at'
+            'id', 'part_number', 'description', 'selling_price', 'cost_price', 'quantity_on_hand', 'is_active', 'created_at', 'updated_at'
         ]
 
     def validate_part_number(self, value):
